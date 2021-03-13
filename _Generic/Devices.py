@@ -8,11 +8,14 @@ from builtins import range
 from past.utils import old_div
 from functools import partial
 from _Framework.Util import group
-RCK_BANK1 = (u'Macro 1', u'Macro 2', u'Macro 3', u'Macro 4', u'Macro 5', u'Macro 6', u'Macro 7', u'Macro 8')
-RCK_BANK2 = (u'Macro 9', u'Macro 10', u'Macro 11', u'Macro 12', u'Macro 13', u'Macro 14', u'Macro 15', u'Macro 16')
-RCK_BANKS = (RCK_BANK1, RCK_BANK2)
+##Add RCK_BANK2's values to RCK_BANK1, remove RCK_BANK2
+RCK_BANK1 = (u'Macro 1', u'Macro 2', u'Macro 3', u'Macro 4', u'Macro 5', u'Macro 6', u'Macro 7', u'Macro 8', u'Macro 9', u'Macro 10', u'Macro 11', u'Macro 12', u'Macro 13', u'Macro 14', u'Macro 15', u'Macro 16')
+#RCK_BANK2 = ()
+##Remove RCK_BANK2 from list
+RCK_BANKS = (RCK_BANK1,)
 RCK_BOBS = (RCK_BANK1,)
-RCK_BNK_NAMES = (u'Macros', u'Macros 2')
+##Remove u'Macros 2' from list
+RCK_BNK_NAMES = (u'Macros',)
 ALG_BANK1 = (u'OSC1 Level', u'OSC1 Octave', u'OSC1 Semi', u'OSC1 Shape', u'OSC2 Level', u'OSC2 Octave', u'OSC2 Semi', u'OSC2 Shape')
 ALG_BANK2 = (u'OSC1 Balance', u'F1 Freq', u'F1 Resonance', u'F1 Type', u'OSC2 Balance', u'F2 Freq', u'F2 Resonance', u'F2 Type')
 ALG_BANK3 = (u'FEG1 Attack', u'FEG1 Decay', u'FEG1 Sustain', u'FEG1 Rel', u'FEG2 Attack', u'FEG2 Decay', u'FEG2 Sustain', u'FEG2 Rel')
@@ -588,14 +591,15 @@ def parameter_banks(device, device_dict = DEVICE_DICT):
                             parameter_indices = device.get_bank_parameters(bank_index)
                         except:
                             parameter_indices = []
-
-                        if len(parameter_indices) != 8:
-                            return [ None for i in range(0, 8) ]
+##change the indicies and range to include all 16 we are looking to auto map
+                        if len(parameter_indices) != 16:
+                            return [ None for i in range(0, 16) ]
                         else:
                             return [ (device.parameters[i] if i != -1 else None) for i in parameter_indices ]
 
                     return list(map(_bank_parameters, list(range(0, banks))))
-            return group(device_parameters_to_map(device), 8)
+##change device params to map to 16
+            return group(device_parameters_to_map(device), 16)
     return []
 
 
@@ -611,7 +615,7 @@ def best_of_parameter_bank(device, device_bob_dict = DEVICE_BOB_DICT):
         except:
             return []
 
-    return device.parameters[1:9]
+    return device.parameters[1:17]
 
 
 def number_of_parameter_banks(device, device_dict = DEVICE_DICT):
@@ -630,7 +634,8 @@ def number_of_parameter_banks(device, device_dict = DEVICE_DICT):
                 if banks != 0:
                     return banks
             param_count = len(device.parameters[1:])
-            return old_div(param_count, 8) + (1 if param_count % 8 else 0)
+##change param count to 16
+            return old_div(param_count, 16) + (1 if param_count % 8 else 0)
     return 0
 
 
