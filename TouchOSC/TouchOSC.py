@@ -42,10 +42,10 @@ def make_launch_control_encoder(identifier, name, channel = 0):
 
 def make_all_encoders(name_prefix = u'', make_encoder = make_launch_control_encoder):
 ##I use channel 16 (called out in device below) and cc's starting at 1.. so we adjust the values here since Novation uses 21,41, on channel 11.
-    return ([ make_encoder(9 + index, name_prefix + u'_Bottom_Encoder_' + str(index)) for index in range(8) ], [ make_encoder(1 + index, name_prefix + u'_Top_Encoder_' + str(index)) for index in range(8) ])
+    return ([ make_encoder(8 + index, name_prefix + u'_Bottom_Encoder_' + str(index)) for index in range(8) ], [ make_encoder(0 + index, name_prefix + u'_Top_Encoder_' + str(index)) for index in range(8) ])
 
 
-pad_identifiers = [ (9 + i if i < 4 else 21 + i) for i in range(8) ]
+pad_identifiers = [ (16 + i) for i in range(8) ]
 CC_STATUS = 176
 MODE_SYSEX_MAP = {u'mixer': Sysex.MIXER_MODE,
  u'session': Sysex.SESSION_MODE,
@@ -140,14 +140,31 @@ class TouchOSC(ControlSurface):
 
 ##This is the device mode that you'll want to make the changes to.
     def _init_device(self):
-        make_button = partial(make_launch_control_button, channel=10)
+        make_button = partial(make_launch_control_button, channel=15)
         make_encoder = partial(make_launch_control_encoder, channel=15)
         bottom_encoders, top_encoders = make_all_encoders(u'Device', make_encoder)
 ## Here you change top and bottom encoders to values of :8
         parameter_controls = top_encoders[:8] + bottom_encoders[:8]
         bank_buttons = [ make_button(identifier, u'Device_Bank_Button_' + str(i), is_pad=True) for i, identifier in enumerate(pad_identifiers) ]
-        for button in bank_buttons:
-            button.set_on_off_values(Colors.LED_ON, Colors.LED_OFF)
+        #for button in bank_buttons:
+        #    button.set_on_off_values(Colors.LED_ON, Colors.LED_OFF)
+## Adding a new feature to use the buttons as a track selector.     
+        self._selector = SpecialMixerComponent(8) #mixercomponent and channelstripcomponent
+        self._selector.set_enabled(False)
+        self._selector.name = u'Selector'
+        self._selector.selected_strip().name = u'Selected_Channel_Strip'
+        self._selector.master_strip().name = u'Master_Channel_Strip'
+        self._selector_track_nav_layer = Layer(track_bank_left_button=make_button(116, u'Mixer_Track_Left_Button'), track_bank_right_button=make_button(117, u'Mixer_Track_Right_Button'))
+        for index in range(8):
+            thestrip = self._selector.channel_strip(index)
+            thestrip.name = u'Channel_Strip_' + str(index)
+            thestrip.empty_color = Colors.LED_OFF
+            thestrip.set_invert_mute_feedback(True)
+            ## Removed "isPad=True" to force assignment of CC's to the buttons. See pad_identifiers for what the cc values would be set to.
+            select_button = make_button(pad_identifiers[index], u'Track_Select_Button_' + str(index))
+            ## You can set colors here for touchOSC, and it honors the right brightness
+            select_button.set_on_off_values(Colors.YELLOW_FULL, Colors.AMBER_THIRD)
+            thestrip.set_select_button(select_button)
 
         self._device_bank_registry = DeviceBankRegistry()
         self._device = DeviceComponent(device_bank_registry=self._device_bank_registry, name=u'Device', device_selection_follows_track_selection=True)
@@ -159,11 +176,7 @@ class TouchOSC(ControlSurface):
         self._device_navigation.set_enabled(False)
         self._device_navigation.name = u'Device_Navigation'
         self._device_navigation.layer = Layer(next_device_button=make_button(115, u'Next_Device_Button'), previous_device_button=make_button(114, u'Prev_Device_Button'))
-        self._view_control = ViewControlComponent()
-        self._view_control.set_enabled(False)
-        self._view_control.name = u'View_Control'
-        self._view_control.layer = Layer(next_track_button=make_button(117, u'Device_Next_Track_Button'), prev_track_button=make_button(116, u'Device_Prev_Track_Button'))
-
+        
     def _init_modes(self):
         self._modes = ModesComponent(is_root=True)
         self._modes.add_mode(u'mixer', [partial(self._session.set_mixer, self._mixer),
@@ -176,7 +189,18 @@ class TouchOSC(ControlSurface):
          self._session_mixer,
          self._session,
          self._show_controlled_tracks_message])
-        self._modes.add_mode(u'device', [self._device, self._device_navigation, self._view_control])
+       ##add self._selector and self._show_controlled_tracks_message to the mode properties of the mode 'device'
+        #self._modes.add_mode(u'device', [self._device, self._selector, self._device_navigation])
+        self._modes.add_mode(u'device', [partial(self._session.set_mixer, self._selector),
+         LayerMode(self._session, self._selector_track_nav_layer),
+         self._device,
+         self._selector,
+         self._device_navigation,
+         self._session,
+         self._show_controlled_tracks_message])
+        self._modes.add_mode(u'user', None)
+        self._modes.selected_mode = u'device'
+        self._modes.layer = Layer(mixer_button=ButtonSysexControl(Sysex.MIXER_MODE), session_button=ButtonSysexControl(Sysex.SESSION_MODE), device_button=ButtonSysexControl(Sysex.DEVICE_MODE))
         self._modes.add_mode(u'user', None)
 ##Almost forgot to set the mode to device, since I'm only using the device controls to display controls on TouchOSC.
         self._modes.selected_mode = u'device'
