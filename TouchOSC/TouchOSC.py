@@ -41,11 +41,11 @@ def make_launch_control_encoder(identifier, name, channel = 0):
 
 
 def make_all_encoders(name_prefix = u'', make_encoder = make_launch_control_encoder):
-##I use channel 16 (called out in device below) and cc's starting at 1.. so we adjust the values here since Novation uses 21,41, on channel 11.
+##I use channel 16 (called out in device below) and cc's starting at 0.. so we adjust the values here since Novation uses 21,41, on channel 11.
     return ([ make_encoder(8 + index, name_prefix + u'_Bottom_Encoder_' + str(index)) for index in range(8) ], [ make_encoder(0 + index, name_prefix + u'_Top_Encoder_' + str(index)) for index in range(8) ])
 
-
-pad_identifiers = [ (16 + i) for i in range(8) ]
+## maybe turn the starting CC into a variable to easily set up top?
+pad_identifiers = [ (i) for i in range(8) ]
 CC_STATUS = 176
 MODE_SYSEX_MAP = {u'mixer': Sysex.MIXER_MODE,
  u'session': Sysex.SESSION_MODE,
@@ -154,14 +154,15 @@ class TouchOSC(ControlSurface):
         self._selector.name = u'Selector'
         self._selector.selected_strip().name = u'Selected_Channel_Strip'
         self._selector.master_strip().name = u'Master_Channel_Strip'
-        self._selector_track_nav_layer = Layer(track_bank_left_button=make_button(116, u'Mixer_Track_Left_Button'), track_bank_right_button=make_button(117, u'Mixer_Track_Right_Button'))
+        #self._selector_track_nav_layer = Layer(track_bank_left_button=make_button(116, u'Mixer_Track_Left_Button'), track_bank_right_button=make_button(117, u'Mixer_Track_Right_Button'))
+## Changed to note/isPad because EC4 doesn't have CC+8 instant, it's toggle only at the time of scripting.
+        self._selector_track_nav_layer = Layer(track_bank_left_button=make_button(12, u'Mixer_Track_Left_Button' + str(14), is_pad=True), track_bank_right_button=make_button(13, u'Mixer_Track_Right_Button' + str(15), is_pad=True))
         for index in range(8):
             thestrip = self._selector.channel_strip(index)
             thestrip.name = u'Channel_Strip_' + str(index)
             thestrip.empty_color = Colors.LED_OFF
             thestrip.set_invert_mute_feedback(True)
-            ## Removed "isPad=True" to force assignment of CC's to the buttons. See pad_identifiers for what the cc values would be set to.
-            select_button = make_button(pad_identifiers[index], u'Track_Select_Button_' + str(index))
+            select_button = make_button(pad_identifiers[index], u'Track_Select_Button_' + str(index), is_pad=True)
             ## You can set colors here for touchOSC, and it honors the right brightness
             select_button.set_on_off_values(Colors.YELLOW_FULL, Colors.AMBER_THIRD)
             thestrip.set_select_button(select_button)
@@ -175,7 +176,8 @@ class TouchOSC(ControlSurface):
         self._device_navigation = DeviceNavigationComponent()
         self._device_navigation.set_enabled(False)
         self._device_navigation.name = u'Device_Navigation'
-        self._device_navigation.layer = Layer(next_device_button=make_button(115, u'Next_Device_Button'), previous_device_button=make_button(114, u'Prev_Device_Button'))
+        #self._device_navigation.layer = Layer(next_device_button=make_button(115, u'Next_Device_Button'), previous_device_button=make_button(114, u'Prev_Device_Button'))
+        self._device_navigation.layer = Layer(next_device_button=make_button(15, u'Next_Device_Button' + str(15), is_pad=True), previous_device_button=make_button(14, u'Prev_Device_Button' + str(14), is_pad=True))
         
     def _init_modes(self):
         self._modes = ModesComponent(is_root=True)
