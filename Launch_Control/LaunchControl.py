@@ -143,15 +143,19 @@ class LaunchControl(ControlSurface):
     def _init_device(self):
         make_button = partial(make_launch_control_button, channel=10)
         make_encoder = partial(make_launch_control_encoder, channel=10)
-        bottom_encoders, top_encoders = make_all_encoders(u'Device', make_encoder)
-# Here you change top and bottom encoders to values of :8 since, you know, there are EIGHT )@$^&%% KNOBS ON EACH )@$^&%% ROW.
-        parameter_controls = top_encoders[:8] + bottom_encoders[:8]
-## I removed the bank buttons because I wanted the pads to be track select instead.
+        bottom_encoders, top_encoders = make_all_encoders(u'Mixer', make_encoder)
+        pan_volume_layer = Layer(volume_controls=ButtonMatrixElement(rows=[bottom_encoders]), pan_controls=ButtonMatrixElement(rows=[top_encoders]))
+        sends_layer = Layer(sends_controls=ButtonMatrixElement(rows=[bottom_encoders, top_encoders]))
+        modes_layer = Layer(pan_volume_button=make_button(114, u'Pan_Volume_Mode_Button'), sends_button=make_button(115, u'Sends_Mode_Button'))
+## Here you change top and bottom encoders to values of :8
+        #parameter_controls = top_encoders[:8] + bottom_encoders[:8]
         #bank_buttons = [ make_button(identifier, u'Device_Bank_Button_' + str(i), is_pad=True) for i, identifier in enumerate(pad_identifiers) ]
         #for button in bank_buttons:
         #    button.set_on_off_values(Colors.LED_ON, Colors.LED_OFF)
 ## Adding a new feature to use the buttons as a track selector. 
-        self._selector = SpecialMixerComponent(8) #mixercomponent and channelstripcomponent
+        sends_layer = Layer(sends_controls=ButtonMatrixElement(rows=[bottom_encoders, top_encoders]))
+        #self._selector = SpecialMixerComponent(8) #mixercomponent and channelstripcomponent
+        self._selector = SpecialMixerComponent(8, modes_layer, pan_volume_layer, sends_layer)
         self._selector.set_enabled(False)
         self._selector.name = u'Selector'
         self._selector.selected_strip().name = u'Selected_Channel_Strip'
@@ -165,19 +169,19 @@ class LaunchControl(ControlSurface):
             select_button = make_button(pad_identifiers[index], u'Track_Select_Button_' + str(index), is_pad=True)
             select_button.set_on_off_values(Colors.AMBER_FULL, Colors.AMBER_THIRD)
             thestrip.set_select_button(select_button)
-## We still want the device bank and navigation so you can use those up/down buttons to change devices on the selected track.
+
         self._device_bank_registry = DeviceBankRegistry()
         self._device = DeviceComponent(device_bank_registry=self._device_bank_registry, name=u'Device', device_selection_follows_track_selection=True)
         self._device.set_enabled(False)
-# change to send top and bottom encoders
-        self._device.layer = Layer(parameter_controls=ButtonMatrixElement(rows=[top_encoders, bottom_encoders]))
+##change to send top and bottom encoders
+        #self._device.layer = Layer(parameter_controls=ButtonMatrixElement(rows=[top_encoders, bottom_encoders]))
         self.set_device_component(self._device)
         self._device_navigation = DeviceNavigationComponent()
         self._device_navigation.set_enabled(False)
         self._device_navigation.name = u'Device_Navigation'
         self._device_navigation.layer = Layer(next_device_button=make_button(115, u'Next_Device_Button'), previous_device_button=make_button(114, u'Prev_Device_Button'))
-## Part of my testing was seeing if I could just use the view_control here, but I can't so I commented it out. See the original for what it used to be.
-# change self._view_control to be a SessionComponent() for using track_bank_left/right_button. It used to be a ViewControlComponent()
+        self._on_selected_send_index.subject = self._selector
+##change self._view_control to be a SessionComponent() for using track_bank_left/right_button. It used to be a ViewControlComponent()
         #self._view_control = SessionComponent()
         #self._view_control.set_enabled(False)
         #self._view_control.name = u'View_Control'
@@ -195,9 +199,8 @@ class LaunchControl(ControlSurface):
          self._session_mixer,
          self._session,
          self._show_controlled_tracks_message])
-## old way of setting up the _device
+##add self._selector and self._show_controlled_tracks_message to the mode properties of the mode 'device'
         #self._modes.add_mode(u'device', [self._device, self._selector, self._device_navigation])
-## modified the device mode to be built similar to the mixer and session ones. We have to use session/mixer elements to get at the use of selector's nav buttons.
         self._modes.add_mode(u'device', [partial(self._session.set_mixer, self._selector),
          LayerMode(self._session, self._selector_track_nav_layer),
          self._device,
@@ -208,6 +211,7 @@ class LaunchControl(ControlSurface):
         self._modes.add_mode(u'user', None)
         self._modes.selected_mode = u'device'
         self._modes.layer = Layer(mixer_button=ButtonSysexControl(Sysex.MIXER_MODE), session_button=ButtonSysexControl(Sysex.SESSION_MODE), device_button=ButtonSysexControl(Sysex.DEVICE_MODE))
+
 
     @subject_slot(u'offset')
     def _on_track_offset(self):

@@ -203,11 +203,8 @@ class TouchOSC(ControlSurface):
         self._modes.add_mode(u'user', None)
         self._modes.selected_mode = u'device'
         self._modes.layer = Layer(mixer_button=ButtonSysexControl(Sysex.MIXER_MODE), session_button=ButtonSysexControl(Sysex.SESSION_MODE), device_button=ButtonSysexControl(Sysex.DEVICE_MODE))
-        self._modes.add_mode(u'user', None)
 ##Almost forgot to set the mode to device, since I'm only using the device controls to display controls on TouchOSC.
-        self._modes.selected_mode = u'device'
-        self._modes.layer = Layer(mixer_button=ButtonSysexControl(Sysex.MIXER_MODE), session_button=ButtonSysexControl(Sysex.SESSION_MODE), device_button=ButtonSysexControl(Sysex.DEVICE_MODE))
-
+   
     @subject_slot(u'offset')
     def _on_track_offset(self):
         self._show_controlled_tracks_message()
