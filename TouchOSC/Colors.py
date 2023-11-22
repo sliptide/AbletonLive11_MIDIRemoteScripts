@@ -15,3 +15,5 @@ AMBER_FULL = RED_FULL + GREEN_FULL - 4
 AMBER_HALF = RED_HALF + GREEN_HALF - 4
 AMBER_THIRD = RED_THIRD + GREEN_THIRD - 4
 AMBER_BLINK = AMBER_FULL - 4 + 8
+#Added a new 100% brightness indicator for use w/the track selection indicator.
+TOTAL_ON = 100

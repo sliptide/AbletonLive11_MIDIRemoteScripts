@@ -162,9 +162,10 @@ class TouchOSC(ControlSurface):
             thestrip.name = u'Channel_Strip_' + str(index)
             thestrip.empty_color = Colors.LED_OFF
             thestrip.set_invert_mute_feedback(True)
-            select_button = make_button(pad_identifiers[index], u'Track_Select_Button_' + str(index), is_pad=True)
+            #separate the select_buttons to a different channel so that they don't pick up all of the device mappings when viewing a track with a device in the chain.
+            select_button = make_button(pad_identifiers[index], u'Track_Select_Button_' + str(index), channel=14, is_pad=True)
             ## You can set colors here for touchOSC, and it honors the right brightness
-            select_button.set_on_off_values(Colors.YELLOW_FULL, Colors.AMBER_THIRD)
+            select_button.set_on_off_values(Colors.AMBER_FULL, Colors.AMBER_THIRD)
             thestrip.set_select_button(select_button)
 
         self._device_bank_registry = DeviceBankRegistry()
